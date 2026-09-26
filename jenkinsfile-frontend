@@ -3,16 +3,20 @@ pipeline {
         label 'worker'
     }
 
+    tools{
+        nodejs 'nodejs'
+    }
+
     environment{
         MY_AWS_CRED = credentials('aws-cred')
-        ECR_REPO = '822920903800.dkr.ecr.us-west-2.amazonaws.com/frontend'
+        ECR_REPO = '912388441170.dkr.ecr.ap-south-1.amazonaws.com/frontend'
     }
 
 
     stages{
         stage('Checkout'){
             steps {
-                git branch: 'main', credentialsId: 'github-cred', url: 'https://github.com/mayurpandit25/EasyCRUD.git'
+                git branch: 'main', url: 'https://github.com/ajaydeore-29/EasyCRUD.git'
             }
         }
 
@@ -20,8 +24,7 @@ pipeline {
             steps{
                 dir('frontend'){
                     sh '''
-                        npm install
-                        npm run build
+                         npm run build
                     '''
                 }
             }
@@ -35,7 +38,7 @@ pipeline {
         stage('Artifacts to s3'){
             steps {
                 dir('frontend'){
-                    sh 'aws s3 sync dist/ s3://mayur.comm/'
+                    sh 'aws s3 sync dist/ s3://aj-bkt-123/'
                 }
             }
         }
@@ -51,7 +54,7 @@ pipeline {
         stage('Push Image to ECR'){
             steps{
                 sh '''
-                    aws ecr get-login-password --region us-west-2 | docker login --username AWS --password-stdin 822920903800.dkr.ecr.us-west-2.amazonaws.com
+                    aws ecr get-login-password --region ap-south-1 | docker login --username AWS --password-stdin 912388441170.dkr.ecr.ap-south-1.amazonaws.com
                     docker tag frontend:${BUILD_NUMBER} ${ECR_REPO}:${BUILD_NUMBER}
                     docker push ${ECR_REPO}:${BUILD_NUMBER}
 
@@ -78,12 +81,12 @@ pipeline {
                 ]) {
                     
                     sh '''
-                        git config  user.name "mayurpandit25"
-                        git config user.email "panditmayur888@gmail.com"
+                        git config  user.name "ajaydeore-29"
+                        git config user.email "ajaydeore29@gmail.com"
 
                         git add k8s/frontend/frontend-deployment.yaml
                         git commit -m "Update frontend-deployment"
-                        git push https://${GIT_USERNAME}:${GIT_PASSWORD}@github.com/mayurpandit25/EasyCRUD.git HEAD:main
+                        git push https://${GIT_USERNAME}:${GIT_PASSWORD}@github.com/ajaydeore-29/EasyCRUD.git HEAD:main
                     '''
                 }
             }
@@ -92,7 +95,7 @@ pipeline {
         stage('Update Argocd'){
             steps{
                     sh '''
-                        aws eks update-kubeconfig --name my-eks-cluster-mayur --region us-west-2
+                        aws eks update-kubeconfig --name my-eks-cluster-mayur --region ap-south-1
                         kubectl apply -f argocd/frontend-application.yaml
                         kubectl apply -f argocd/ingress-application.yaml
                         kubectl get app -n argocd
