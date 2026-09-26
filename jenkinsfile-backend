@@ -4,18 +4,18 @@ pipeline {
     }
 
     tools{
-        maven 'maven'
+        maven 'mvn'
     }
 
     environment{
         MY_AWS_CRED = credentials('aws-cred')
-        ECR_REPO = '822920903800.dkr.ecr.us-west-2.amazonaws.com/backend'
+        ECR_REPO = '912388441170.dkr.ecr.ap-south-1.amazonaws.com/backend'
     }
 
     stages{
         stage('Checkout'){
             steps{
-                git branch: 'main', credentialsId: 'github-cred', url: 'https://github.com/mayurpandit25/EasyCRUD.git'
+                git branch: 'main', credentialsId: 'github-cred', url: 'https://github.com/ajaydeore-29/EasyCRUD.git'
             }
         }
 
@@ -32,27 +32,27 @@ pipeline {
             }
         }
 
-        // stage('OWASP Dependency Check'){
-        //     steps{
-        //         dir('backend'){
-        //             withCredentials([
-        //                 string(
-        //                     credentialsId: 'nvd-api-key',
-        //                     variable: 'NVD_API_KEY'
-        //                 )
-        //             ]) {
-        //                 sh '''
-        //                     mvn org.owasp:dependency-check-maven:check \
-        //                     -DnvdApiKeyEnvironmentVariable=NVD_API_KEY
-        //                 '''
-        //             }
-        //         }
-        //     }
-        // }
+         stage('OWASP Dependency Check'){
+             steps{
+                 dir('backend'){
+                     withCredentials([
+                         string(
+                             credentialsId: 'nvd-api-key',
+                             variable: 'NVD_API_KEY'
+                         )
+                     ]) {
+                         sh '''
+                             mvn org.owasp:dependency-check-maven:check \
+                             -DnvdApiKeyEnvironmentVariable=NVD_API_KEY
+                         '''
+                     }
+                 }
+             }
+        }
 
         stage('Artifacts to S3'){
             steps{
-                sh 'aws s3 cp backend/target/*.jar s3://mayur.comm/Artifacts/'
+                sh 'aws s3 cp backend/target/*.jar s3://aj-bkt-123/Artifacts/'
             }
         }
 
@@ -74,14 +74,14 @@ pipeline {
             }
         }
 
-        stage('Trivy Filesystem Scan'){
+       /* stage('Trivy Filesystem Scan'){
             steps{
                 sh '''
                    trivy fs --scanners vuln,secret --severity HIGH,CRITICAL --exit-code 0 .
                 '''
             }
         }
-
+*/
         stage('Docker Build'){
             steps{
                 dir('backend'){
@@ -93,14 +93,14 @@ pipeline {
             }
         }
 
-        stage('TRIVY - SCANNING'){
+      /*  stage('TRIVY - SCANNING'){
             steps {
                 sh '''
                     trivy image --cache-dir /var/lib/trivy --scanners vuln --severity HIGH,CRITICAL --skip-java-db-update --exit-code 0 backend:${BUILD_NUMBER}
                 '''
             }
         }
-
+*/
         stage('Approval'){
             steps{
                 timeout(time: 30, unit: 'MINUTES'){
@@ -112,7 +112,7 @@ pipeline {
         stage('Push Image to ECR'){
             steps{
                 sh '''
-                    aws ecr get-login-password --region us-west-2 | docker login --username AWS --password-stdin 822920903800.dkr.ecr.us-west-2.amazonaws.com
+                    aws ecr get-login-password --region ap-south-1 | docker login --username AWS --password-stdin 912388441170.dkr.ecr.ap-south-1.amazonaws.com
                     docker tag backend:${BUILD_NUMBER} ${ECR_REPO}:${BUILD_NUMBER}
                     docker push ${ECR_REPO}:${BUILD_NUMBER}
                 '''
@@ -138,12 +138,12 @@ pipeline {
                 ]) {
                     
                     sh '''
-                        git config  user.name "mayurpandit25"
-                        git config user.email "panditmayur888@gmail.com"
+                        git config  user.name "ajaydeore-29"
+                        git config user.email "ajaydeore8790@gmail.com"
 
                         git add k8s/backend/backend-deployment.yaml
                         git commit -m "Update backend-deployment"
-                        git push https://${GIT_USERNAME}:${GIT_PASSWORD}@github.com/mayurpandit25/EasyCRUD.git HEAD:main
+                        git push https://${GIT_USERNAME}:${GIT_PASSWORD}@github.com/ajaydeore-29/EasyCRUD.git HEAD:main
                     '''
                 }
             }
@@ -153,7 +153,7 @@ pipeline {
             steps{
                 dir('argocd'){
                     sh '''
-                        aws eks update-kubeconfig --name my-eks-cluster-mayur --region us-west-2
+                        aws eks update-kubeconfig --name my-eks-cluster-mayur --region ap-south-1
                         kubectl apply -f backend-application.yaml
                         kubectl get app -n argocd
                         sleep 10
