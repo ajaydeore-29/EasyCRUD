@@ -83,7 +83,7 @@ pipeline {
                     sh '''
                         git config  user.name "ajaydeore-29"
                         git config user.email "ajaydeore29@gmail.com"
-                        git pull
+                        
 
                         git add k8s/frontend/frontend-deployment.yaml
                         git commit -m "Update frontend-deployment"
