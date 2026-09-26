@@ -140,6 +140,7 @@ pipeline {
                     sh '''
                         git config  user.name "ajaydeore-29"
                         git config user.email "ajaydeore8790@gmail.com"
+                        git pull
 
                         git add k8s/backend/backend-deployment.yaml
                         git commit -m "Update backend-deployment"
